@@ -365,7 +365,7 @@ class Bundler extends EventEmitter {
     this.buildQueue.delete(asset);
   }
 
-  createBundleTree(asset, dep, bundle) {
+  createBundleTree(asset, dep, bundle, bundles = new Map()) {
     if (dep) {
       asset.parentDeps.add(dep);
     }
@@ -395,11 +395,16 @@ class Bundler extends EventEmitter {
 
     // Create a new bundle for dynamic imports
     if (dep && dep.dynamic) {
-      bundle = bundle.createChildBundle(
-        asset.type,
-        Path.join(this.options.outDir, asset.generateBundleName())
-      );
-      bundle.entryAsset = asset;
+      const path = Path.join(this.options.outDir, asset.generateBundleName());
+      if (bundles.has(path)) {
+        let childBundle = bundles.get(path);
+        bundle.childBundles.add(childBundle);
+        bundle = childBundle;
+      } else {
+        bundle = bundle.createChildBundle(asset.type, path);
+        bundles.set(path, bundle);
+        bundle.entryAsset = asset;
+      }
     }
 
     // Add the asset to the bundle of the asset's type
@@ -414,7 +419,7 @@ class Bundler extends EventEmitter {
 
     for (let dep of asset.dependencies.values()) {
       let assetDep = asset.depAssets.get(dep.name);
-      this.createBundleTree(assetDep, dep, bundle);
+      this.createBundleTree(assetDep, dep, bundle, bundles);
     }
 
     return bundle;
