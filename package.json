@@ -11,9 +11,11 @@
     "babel-core": "^6.25.0",
     "babel-generator": "^6.25.0",
     "babel-plugin-transform-es2015-modules-commonjs": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
     "babylon": "^6.17.4",
     "babylon-walk": "^1.0.2",
     "browser-resolve": "^1.11.2",
+    "browserslist": "^2.11.2",
     "chalk": "^2.1.0",
     "chokidar": "^1.7.0",
     "commander": "^2.11.0",
@@ -37,6 +39,7 @@
     "posthtml": "^0.10.1",
     "resolve": "^1.4.0",
     "sanitize-filename": "^1.6.1",
+    "semver": "^5.4.1",
     "serve-static": "^1.12.4",
     "uglify-es": "^3.2.1",
     "v8-compile-cache": "^1.1.0",
@@ -45,8 +48,8 @@
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
-    "babel-preset-env": "^1.6.1",
     "bsb-js": "^1.0.1",
+    "codecov": "^3.0.0",
     "coffeescript": "^2.0.3",
     "cross-env": "^5.1.1",
     "eslint": "^4.13.0",
@@ -65,8 +68,7 @@
     "prettier": "^1.9.1",
     "rimraf": "^2.6.1",
     "stylus": "^0.54.5",
-    "typescript": "^2.6.2",
-    "codecov": "^3.0.0"
+    "typescript": "^2.6.2"
   },
   "scripts": {
     "test": "cross-env NODE_ENV=test mocha",
