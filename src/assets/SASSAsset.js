@@ -2,6 +2,33 @@ const CSSAsset = require('./CSSAsset');
 const localRequire = require('../utils/localRequire');
 const promisify = require('../utils/promisify');
 const path = require('path');
+const fs = require('fs');
+
+function maybeAddScss(s) {
+  return /\.scss$/.test(s) ? s : s + '.scss';
+}
+let templatesToTry = [
+  maybeAddScss,
+  s => maybeAddScss(path.join(path.dirname(s), '_' + path.basename(s))),
+  s => s + '/index.scss'
+];
+
+function resolvePath(prev, file, includePaths) {
+  prev = path.resolve(process.cwd(), path.dirname(prev));
+  includePaths = [prev].concat(includePaths);
+  for (let t of templatesToTry) {
+    let realFile = t(file);
+    for (let ip of includePaths) {
+      let realIp = path.resolve(process.cwd(), ip);
+      let absolute = path.resolve(realIp, realFile);
+      //console.log("Resolving a sass asset", absolute)
+      if (fs.existsSync(absolute)) {
+        return absolute;
+      }
+    }
+  }
+  return null;
+}
 
 class SASSAsset extends CSSAsset {
   async parse(code) {
@@ -13,14 +40,33 @@ class SASSAsset extends CSSAsset {
       this.package.sass ||
       (await this.getConfig(['.sassrc', '.sassrc.js'])) ||
       {};
-    opts.includePaths = (opts.includePaths || []).concat(
-      path.dirname(this.name)
-    );
+    if (!opts.relativeUrls) {
+      opts.includePaths = (opts.includePaths || []).concat(
+        path.dirname(this.name)
+      );
+    }
     opts.data = code;
     opts.indentedSyntax =
       typeof opts.indentedSyntax === 'boolean'
         ? opts.indentedSyntax
         : path.extname(this.name).toLowerCase() === '.sass';
+
+    if (opts.relativeUrls) {
+      opts.importer = (url, previousUrl) => {
+        let realPreviousUrl = previousUrl === 'stdin' ? this.name : previousUrl;
+        let absUrl = resolvePath(realPreviousUrl, url, opts.includePaths);
+        let absDir = path.dirname(absUrl);
+        let thisDir = path.dirname(this.name);
+        let newContent = fs
+          .readFileSync(absUrl, 'utf8')
+          .replace(/url\(['"]?(\.[^)'"]+)['"]?\)/g, (_, assetUrl) => {
+            let assetAbsolute = path.resolve(absDir, assetUrl);
+            let newAssetUrl = path.relative(thisDir, assetAbsolute);
+            return "url('" + newAssetUrl + "')";
+          });
+        return {file: absUrl, contents: newContent};
+      };
+    }
 
     opts.functions = Object.assign({}, opts.functions, {
       url: node => {

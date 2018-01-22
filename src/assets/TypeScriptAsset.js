@@ -1,5 +1,6 @@
 const JSAsset = require('./JSAsset');
 const localRequire = require('../utils/localRequire');
+const path = require('path');
 
 class TypeScriptAsset extends JSAsset {
   async parse(code) {
@@ -13,8 +14,7 @@ class TypeScriptAsset extends JSAsset {
       fileName: this.basename
     };
 
-    let tsconfig = await this.getConfig(['tsconfig.json']);
-
+    let tsconfig = await this.readFullConfig('tsconfig.json');
     // Overwrite default if config is found
     if (tsconfig) {
       transpilerOptions.compilerOptions = Object.assign(
@@ -30,6 +30,18 @@ class TypeScriptAsset extends JSAsset {
       transpilerOptions
     ).outputText;
     return await super.parse(this.contents);
+  }
+
+  async readFullConfig(filepath) {
+    let config = {compilerOptions: {}};
+    while (filepath != null) {
+      let tsconfig = await this.getConfig([filepath]);
+      Object.assign(config, tsconfig);
+      filepath = tsconfig.extends
+        ? path.join(path.dirname(filepath), tsconfig.extends)
+        : null;
+    }
+    return config;
   }
 }
 
