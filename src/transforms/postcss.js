@@ -39,10 +39,14 @@ async function getConfig(asset) {
   };
 
   if (config.plugins && config.plugins['postcss-modules']) {
-    postcssModulesConfig = Object.assign(
-      config.plugins['postcss-modules'],
-      postcssModulesConfig
-    );
+    let oldConfig = config.plugins['postcss-modules'];
+    let newConfig = {
+      getJSON: (filename, json) => {
+        oldConfig.getJSON && oldConfig.getJSON(filename, json);
+        return (asset.cssModules = json);
+      }
+    };
+    Object.assign(postcssModulesConfig, oldConfig, newConfig);
     delete config.plugins['postcss-modules'];
   }
 
